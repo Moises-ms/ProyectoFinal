@@ -133,3 +133,32 @@ def aplicar_impuesto_a_presupuesto(presupuesto, porcentaje_impuesto):
     presupuesto["impuesto"] = monto_imp
     presupuesto["total"] = subtotal_con_desc + monto_imp
     print(f"\n[✓] Impuesto/IVA del {porcentaje_impuesto}% (+${monto_imp:.2f}) aplicado.")
+
+def calcular_ganancia(presupuesto, porcentaje):
+    base = presupuesto["subtotal"] - presupuesto["descuento"]
+    if base <= 0:
+        print("[!] No hay base para calcular ganancia.")
+        return
+    presupuesto["ganancia"] = base * (porcentaje / 100.0)
+    presupuesto["total"] = base + presupuesto["ganancia"] + presupuesto["impuesto"]
+    print("[✓] Ganancia del {}% (+${:.2f}) aplicada.".format(porcentaje, presupuesto["ganancia"]))
+
+# ==========================================
+# 5. COLA DE EXPORTACIÓN (NUEVA)
+# ==========================================
+def crear_cola_exportacion():
+    return {"elementos": []}
+
+def encolar_para_exportar(cola, presupuesto):
+    cola["elementos"].append(presupuesto)
+    print("[✓] Presupuesto N° {} enviado a la COLA de exportación.".format(presupuesto["id"]))
+
+def procesar_cola_exportacion(cola, historial, archivos):
+    if not cola["elementos"]:
+        print("[!] No hay cotizaciones en la cola de exportación.")
+        return False
+    p = cola["elementos"].pop(0)
+    agregar_historial(historial, p)
+    archivos.guardar_presupuesto(p)
+    archivos.exportar_presupuesto_csv(p)
+    return True

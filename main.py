@@ -4,6 +4,7 @@
 import clientes
 import presupuestos
 import historial_calculos
+import archivos
 
 def solicitar_entero(mensaje):
     """Solicita un número entero válido."""
@@ -27,14 +28,35 @@ def solicitar_flotante(mensaje):
             print("\n[X] Entrada inválida. Ingrese un valor numérico válido.")
 
 def main():
-    # Estructuras de datos principales
-    lista_clientes = []
-    cola_trabajos = historial_calculos.crear_cola_cotizaciones()
+    # -----------------------------------------------------
+    # INICIALIZACIÓN Y CARGA DE DATOS DESDE ARCHIVOS
+    # -----------------------------------------------------
+    lista_clientes = archivos.cargar_clientes()
     historial_presupuestos = historial_calculos.crear_historial()
     
-    secuencia_cliente_id = 1
-    secuencia_presupuesto_id = 100
+    # AQUÍ ESTABA EL ERROR: Faltaban declarar las dos colas
+    cola_trabajos = historial_calculos.crear_cola_cotizaciones()
+    cola_exportacion = historial_calculos.crear_cola_exportacion()
 
+    # Cargar presupuestos guardados al historial
+    cargados = archivos.cargar_todos_presupuestos(presupuestos)
+    for p in cargados:
+        historial_calculos.agregar_historial(historial_presupuestos, p)
+
+    # Detectar el siguiente ID para no repetir
+    if lista_clientes:
+        secuencia_cliente_id = max(c["id"] for c in lista_clientes) + 1
+    else:
+        secuencia_cliente_id = 1
+
+    if cargados:
+        secuencia_presupuesto_id = max(p["id"] for p in cargados) + 1
+    else:
+        secuencia_presupuesto_id = 100
+
+    # -----------------------------------------------------
+    # BUCLE PRINCIPAL DEL MENÚ
+    # -----------------------------------------------------
     while True:
         print("\n========================================================")
         print("    SISTEMA DE COTIZACIONES DE FREELANCERS Y TALLERES")
@@ -45,9 +67,11 @@ def main():
         print("4. Atender siguiente trabajo de la COLA")
         print("5. CREAR NUEVA COTIZACIÓN")
         print("6. Ver Historial de Cotizaciones (Adelante / Atrás)")
-        print("7. Salir del programa")
+        print("7. Procesar COLA de exportación (guardar y generar CSV)")
+        print("8. Guardar clientes ahora")
+        print("9. Salir del programa")
         print("--------------------------------------------------------")
-        opcion = input("\nSeleccione una opción (1-7): ").strip()
+        opcion = input("\nSeleccione una opción (1-9): ").strip()
 
         # -----------------------------------------------------
         # 1. REGISTRAR CLIENTE
@@ -67,6 +91,7 @@ def main():
 
             clientes.registrar_cliente(lista_clientes, secuencia_cliente_id, nombre, tel, direccion, correo, rubro)
             secuencia_cliente_id += 1
+            archivos.guardar_clientes(lista_clientes) # Guardado automático
 
         # -----------------------------------------------------
         # 2. VER CLIENTES REGISTRADOS
@@ -91,6 +116,7 @@ def main():
                 desc = input(f"\nDescripción breve del trabajo solicitado para {cli['nombre']}: ").strip()
                 if not desc:
                     desc = "Cotización general de servicio"
+                # AQUÍ SE USA COLA_TRABAJOS
                 historial_calculos.encolar_cotizacion(cola_trabajos, cli, desc)
             else:
                 print(f"\n[X] No se encontró ningún cliente con el ID {id_cli}.")
@@ -99,6 +125,7 @@ def main():
         # 4. ATENDER TRABAJO DE LA COLA
         # -----------------------------------------------------
         elif opcion == "4":
+            # AQUÍ SE USA COLA_TRABAJOS
             historial_calculos.procesar_cotizacion(cola_trabajos)
 
         # -----------------------------------------------------
@@ -131,7 +158,7 @@ def main():
                 print("3. Deshacer última adición (PILA)")
                 print("4. Aplicar porcentaje de descuento")
                 print("5. Aplicar porcentaje de impuesto / IVA")
-                print("6. Finalizar y guardar cotización en HISTORIAL")
+                print("6. Finalizar y enviar a COLA de EXPORTACIÓN")
                 print("7. Cancelar cotización actual")
                 
                 sub_op = input("\nSeleccione una opción (1-7): ").strip()
@@ -168,12 +195,13 @@ def main():
 
                 elif sub_op == "6":
                     if nuevo_presupuesto["cabeza"] is None:
-                        confirmar = input("\n[!] La cotización está vacía (sin ítems). ¿Desea guardarla de todas formas? (s/n): ").strip().lower()
+                        confirmar = input("\n[!] La cotización está vacía (sin ítems). ¿Desea enviarla a exportación de todas formas? (s/n): ").strip().lower()
                         if confirmar != 's':
                             print("\nEdición de cotización continuada.")
                             continue
-
-                    historial_calculos.agregar_historial(historial_presupuestos, nuevo_presupuesto)
+                    
+                    # Se envía a la cola de exportación
+                    historial_calculos.encolar_para_exportar(cola_exportacion, nuevo_presupuesto)
                     break
 
                 elif sub_op == "7":
@@ -204,16 +232,29 @@ def main():
                 print("[X] Opción no válida.")
 
         # -----------------------------------------------------
-        # 7. SALIR
+        # 7. PROCESAR COLA DE EXPORTACIÓN
         # -----------------------------------------------------
         elif opcion == "7":
+            historial_calculos.procesar_cola_exportacion(cola_exportacion, historial_presupuestos, archivos)
+
+        # -----------------------------------------------------
+        # 8. GUARDAR CLIENTES
+        # -----------------------------------------------------
+        elif opcion == "8":
+            archivos.guardar_clientes(lista_clientes)
+
+        # -----------------------------------------------------
+        # 9. SALIR
+        # -----------------------------------------------------
+        elif opcion == "9":
+            archivos.guardar_clientes(lista_clientes)
             print("\n========================================================")
-            print("     Gracias por utilizar el Cotizador.")
+            print("     Gracias por utilizar el Cotizador. Datos guardados.")
             print("========================================================\n")
             break
 
         else:
-            print("\n[X] Opción no válida. Por favor, seleccione un número del 1 al 7.")
+            print("\n[X] Opción no válida. Por favor, seleccione un número del 1 al 9.")
 
 if __name__ == "__main__":
     main()
