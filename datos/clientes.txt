@@ -1,3 +1,0 @@
-#id|nombre|telefono|direccion|correo|rubro
-1|Moises Moraga|5556256q122|nfowenf|Sin correo|Software
-2|Moises Moraga1|3332211|comosaidn|moisemos@gmail.com|pintura
