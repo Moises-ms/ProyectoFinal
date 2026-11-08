@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Clientes</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">Cotizador Freelancer</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">Inicio</a>
+                <a class="nav-link active" href="/clientes">Clientes</a>
+                <a class="nav-link" href="/cola">Cola de Trabajos</a>
+                <a class="nav-link" href="/cotizar">Nueva Cotización</a>
+                <a class="nav-link" href="/historial">Historial</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mb-5">
+        <!-- AGREGAR CLIENTE -->
+        <div class="card shadow-sm p-4 mb-4">
+            <h2 class="h4 mb-3">Registrar Nuevo Cliente</h2>
+            <form method="POST" action="/clientes">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Nombre o Empresa</label>
+                        <input type="text" name="nombre" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Rubro / Especialidad</label>
+                        <input type="text" name="rubro" class="form-control" placeholder="ej. Electricista, Pintor">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Teléfono</label>
+                        <input type="text" name="telefono" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Dirección</label>
+                        <input type="text" name="direccion" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Correo Electrónico</label>
+                        <input type="email" name="correo" class="form-control">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">Registrar Cliente</button>
+            </form>
+        </div>
+
+        <!-- MODIFICAR CLIENTE -->
+        {% if lista_clientes %}
+        <div class="card shadow-sm p-4 mb-4">
+            <h2 class="h4 mb-3">Modificar Cliente Existente</h2>
+            <form method="POST" action="/clientes/modificar">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Seleccionar Cliente</label>
+                        <select name="cliente_id" class="form-select" required>
+                            {% for c in lista_clientes %}
+                            <option value="{{ c.id }}">ID: {{ c.id }} - {{ c.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Campo a Modificar</label>
+                        <select name="campo" class="form-select" required>
+                            <option value="nombre">Nombre</option>
+                            <option value="rubro">Rubro</option>
+                            <option value="telefono">Teléfono</option>
+                            <option value="direccion">Dirección</option>
+                            <option value="correo">Correo</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Nuevo Valor</label>
+                        <input type="text" name="nuevo_valor" class="form-control" required>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-warning w-100">Actualizar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- TABLA DE CLIENTES -->
+        <div class="card shadow-sm p-4">
+            <h2 class="h4 mb-3">Directorio de Clientes</h2>
+            {% if not lista_clientes %}
+                <div class="alert alert-info mb-0">[!] No hay clientes registrados aún.</div>
+            {% else %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Rubro</th>
+                                <th>Teléfono</th>
+                                <th>Dirección</th>
+                                <th>Correo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in lista_clientes %}
+                            <tr>
+                                <td>{{ c.id }}</td>
+                                <td class="fw-bold">{{ c.nombre }}</td>
+                                <td><span class="badge bg-secondary">{{ c.rubro }}</span></td>
+                                <td>{{ c.telefono }}</td>
+                                <td>{{ c.direccion }}</td>
+                                <td>{{ c.correo }}</td>
+                                <td>
+                                    <form method="POST" action="/clientes/eliminar/{{ c.id }}" class="m-0">
+                                        <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

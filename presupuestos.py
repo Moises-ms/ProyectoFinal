@@ -2,7 +2,6 @@
 # Administra ítems de cotización usando una Lista Simplemente Enlazada basada en diccionarios.
 
 def crear_nodo_item(concepto, tipo, cantidad, precio_unitario):
-    """Crea un nodo para un ítem del presupuesto."""
     return {
         "concepto": concepto,
         "tipo": tipo,
@@ -13,11 +12,10 @@ def crear_nodo_item(concepto, tipo, cantidad, precio_unitario):
     }
 
 def crear_presupuesto(id_presupuesto, cliente):
-    """Inicializa la estructura del presupuesto."""
     return {
         "id": id_presupuesto,
         "cliente": cliente,
-        "cabeza": None,  # Cabeza de la lista simplemente enlazada
+        "cabeza": None,
         "subtotal": 0.0,
         "descuento": 0.0,
         "impuesto": 0.0,
@@ -25,7 +23,6 @@ def crear_presupuesto(id_presupuesto, cliente):
     }
 
 def agregar_item(presupuesto, concepto, tipo, cantidad, precio_unitario):
-    """Inserta un nuevo ítem al final de la lista simplemente enlazada."""
     nuevo_nodo = crear_nodo_item(concepto, tipo, cantidad, precio_unitario)
     
     if presupuesto["cabeza"] is None:
@@ -40,9 +37,7 @@ def agregar_item(presupuesto, concepto, tipo, cantidad, precio_unitario):
     print(f"\n[✓] Ítem '{concepto}' agregado a la cotización.")
 
 def eliminar_item(presupuesto, concepto):
-    """Elimina un nodo de la lista enlazada por el nombre del concepto."""
     if presupuesto["cabeza"] is None:
-        print("\n[!] La cotización actual no contiene ningún ítem para eliminar.")
         return False
 
     actual = presupuesto["cabeza"]
@@ -56,16 +51,13 @@ def eliminar_item(presupuesto, concepto):
                 previo["siguiente"] = actual["siguiente"]
             
             calcular_subtotal(presupuesto)
-            print(f"\n[✓] Ítem '{concepto}' eliminado de la cotización.")
             return True
         previo = actual
         actual = actual["siguiente"]
 
-    print(f"\n[X] No se encontró el ítem '{concepto}' en la cotización.")
     return False
 
 def calcular_subtotal(presupuesto):
-    """Recorre la lista simplemente enlazada para calcular el total del presupuesto."""
     subtotal_total = 0.0
     actual = presupuesto["cabeza"]
     
@@ -78,7 +70,6 @@ def calcular_subtotal(presupuesto):
     return subtotal_total
 
 def mostrar_presupuesto(presupuesto):
-    """Imprime el desglose completo de la cotización actual."""
     print(f"\n=========================================================================")
     print(f"                       COTIZACIÓN / PRESUPUESTO N° {presupuesto['id']}")
     cliente = presupuesto["cliente"]

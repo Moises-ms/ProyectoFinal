@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Cotizaciones</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">Cotizador Freelancer</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">Inicio</a>
+                <a class="nav-link" href="/clientes">Clientes</a>
+                <a class="nav-link" href="/cola">Cola de Trabajos</a>
+                <a class="nav-link" href="/cotizar">Nueva Cotización</a>
+                <a class="nav-link active" href="/historial">Historial</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mb-5">
+        <div class="card shadow-sm p-4">
+            <h2 class="h4 mb-3">Historial (Lista Doblemente Enlazada)</h2>
+            
+            <div class="btn-group mb-4">
+                <a href="/historial?orden=adelante" class="btn btn-outline-primary {% if orden == 'adelante' %}active{% endif %}">
+                    Primeras Creadas Primero (Adelante)
+                </a>
+                <a href="/historial?orden=atras" class="btn btn-outline-primary {% if orden == 'atras' %}active{% endif %}">
+                    Recientes Primero (Hacia Atrás)
+                </a>
+            </div>
+
+            {% if not cotizaciones %}
+                <div class="alert alert-info mb-0">[!] No hay cotizaciones registradas en el historial.</div>
+            {% else %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Rubro</th>
+                                <th>Subtotal</th>
+                                <th>Descuento</th>
+                                <th>Impuesto</th>
+                                <th>Total Final</th>
+                                <th>Documento PDF</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in cotizaciones %}
+                            <tr>
+                                <td><span class="badge bg-secondary">#{{ p.id }}</span></td>
+                                <td class="fw-bold">{{ p.cliente.nombre if p.cliente.nombre else p.cliente }}</td>
+                                <td>{{ p.cliente.rubro if p.cliente.rubro else 'General' }}</td>
+                                <td>${{ "%.2f"|format(p.subtotal) }}</td>
+                                <td class="text-danger">-${{ "%.2f"|format(p.descuento) }}</td>
+                                <td class="text-success">+${{ "%.2f"|format(p.impuesto) }}</td>
+                                <td class="fw-bold text-primary">${{ "%.2f"|format(p.total) }}</td>
+                                <td>
+                                    <a href="/descargar_pdf/{{ p.id }}" target="_blank" class="btn btn-danger btn-sm">Ver / Descargar PDF</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

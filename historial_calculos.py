@@ -1,9 +1,6 @@
 # historial_calculos.py
 # Administra Cola de trabajos, Pila para deshacer e Historial con Lista Doblemente Enlazada.
 
-# ==========================================
-# 1. COLA (Queue - Trabajos Pendientes)
-# ==========================================
 def crear_cola_cotizaciones():
     return {"elementos": []}
 
@@ -13,21 +10,12 @@ def encolar_cotizacion(cola, cliente, descripcion_trabajo):
         "descripcion": descripcion_trabajo
     }
     cola["elementos"].append(solicitud)
-    print(f"\n[✓] Solicitud de trabajo agregada a la COLA de espera (Posición #{len(cola['elementos'])}).")
 
 def procesar_cotizacion(cola):
     if not cola["elementos"]:
-        print("\n[!] No hay solicitudes de trabajo pendientes en la cola.")
         return None
-    solicitud = cola["elementos"].pop(0)
-    print(f"\n[✓] Procesando solicitud de: {solicitud['cliente']['nombre']}")
-    print(f"    Requerimiento: {solicitud['descripcion']}")
-    print(f"    (Quedan {len(cola['elementos'])} solicitudes pendientes en la cola)")
-    return solicitud
+    return cola["elementos"].pop(0)
 
-# ==========================================
-# 2. PILA (Stack - Deshacer Ítems)
-# ==========================================
 def crear_pila_deshacer():
     return {"elementos": []}
 
@@ -39,20 +27,15 @@ def apilar_operacion(pila, accion, datos):
 
 def deshacer_operacion(presupuesto, pila, funcion_eliminar_item):
     if not pila["elementos"]:
-        print("\n[!] No hay acciones recientes en la pila para deshacer en esta cotización.")
         return False
 
     ultima_op = pila["elementos"].pop()
     if ultima_op["accion"] == "AGREGAR_ITEM":
         concepto = ultima_op["datos"]["concepto"]
-        print(f"\n[↩] Deshaciendo: Eliminando el ítem agregando anteriormente ('{concepto}')...")
         funcion_eliminar_item(presupuesto, concepto)
         return True
     return False
 
-# ==========================================
-# 3. LISTA DOBLEMENTE ENLAZADA (Historial)
-# ==========================================
 def crear_nodo_historial(presupuesto):
     return {
         "presupuesto": presupuesto,
@@ -75,90 +58,61 @@ def agregar_historial(historial, presupuesto):
         nuevo_nodo["anterior"] = historial["cola"]
         historial["cola"]["siguiente"] = nuevo_nodo
         historial["cola"] = nuevo_nodo
-    print(f"\n[✓] Cotización N° {presupuesto['id']} registrada en el historial general.")
 
 def recorrer_historial_adelante(historial):
     actual = historial["cabeza"]
     if actual is None:
-        print("\n[!] No se ha guardado ninguna cotización en el historial aún.")
         return False
 
-    print("\n=========================================================================")
-    print("      HISTORIAL DE COTIZACIONES (RECORRIDO HACIA ADELANTE: PRIMERAS PRIMERO)")
-    print("=========================================================================")
+    print("\n=== HISTORIAL (ADELANTE) ===")
     while actual is not None:
         p = actual["presupuesto"]
         cli = p["cliente"]["nombre"] if isinstance(p["cliente"], dict) else p["cliente"]
-        print(f"Cotización ID: {p['id']:<5} | Cliente: {cli:<22} | Total: ${p['total']:.2f}")
+        print(f"ID: {p['id']} | Cliente: {cli} | Total: ${p['total']:.2f}")
         actual = actual["siguiente"]
-    print("=========================================================================\n")
     return True
 
 def recorrer_historial_atras(historial):
     actual = historial["cola"]
     if actual is None:
-        print("\n[!] No se ha guardado ninguna cotización en el historial aún.")
         return False
 
-    print("\n=========================================================================")
-    print("      HISTORIAL DE COTIZACIONES (RECORRIDO HACIA ATRÁS: RECIENTES PRIMERO)")
-    print("=========================================================================")
+    print("\n=== HISTORIAL (ATRAS) ===")
     while actual is not None:
         p = actual["presupuesto"]
         cli = p["cliente"]["nombre"] if isinstance(p["cliente"], dict) else p["cliente"]
-        print(f"Cotización ID: {p['id']:<5} | Cliente: {cli:<22} | Total: ${p['total']:.2f}")
+        print(f"ID: {p['id']} | Cliente: {cli} | Total: ${p['total']:.2f}")
         actual = actual["anterior"]
-    print("=========================================================================\n")
     return True
 
-# ==========================================
-# 4. FUNCIONES DE CÁLCULO
-# ==========================================
 def aplicar_descuento_a_presupuesto(presupuesto, porcentaje_descuento):
     subtotal = presupuesto["subtotal"]
     if subtotal == 0:
-        print("\n[!] Agregue ítems a la cotización antes de aplicar un descuento.")
         return
     monto_desc = subtotal * (porcentaje_descuento / 100.0)
     presupuesto["descuento"] = monto_desc
     presupuesto["total"] = max(0.0, subtotal - monto_desc + presupuesto["impuesto"])
-    print(f"\n[✓] Descuento del {porcentaje_descuento}% (-${monto_desc:.2f}) aplicado.")
 
 def aplicar_impuesto_a_presupuesto(presupuesto, porcentaje_impuesto):
     subtotal_con_desc = max(0.0, presupuesto["subtotal"] - presupuesto["descuento"])
     if subtotal_con_desc == 0 and presupuesto["subtotal"] == 0:
-        print("\n[!] Agregue ítems a la cotización antes de calcular impuestos.")
         return
     monto_imp = subtotal_con_desc * (porcentaje_impuesto / 100.0)
     presupuesto["impuesto"] = monto_imp
     presupuesto["total"] = subtotal_con_desc + monto_imp
-    print(f"\n[✓] Impuesto/IVA del {porcentaje_impuesto}% (+${monto_imp:.2f}) aplicado.")
 
-def calcular_ganancia(presupuesto, porcentaje):
-    base = presupuesto["subtotal"] - presupuesto["descuento"]
-    if base <= 0:
-        print("[!] No hay base para calcular ganancia.")
-        return
-    presupuesto["ganancia"] = base * (porcentaje / 100.0)
-    presupuesto["total"] = base + presupuesto["ganancia"] + presupuesto["impuesto"]
-    print("[✓] Ganancia del {}% (+${:.2f}) aplicada.".format(porcentaje, presupuesto["ganancia"]))
-
-# ==========================================
-# 5. COLA DE EXPORTACIÓN (NUEVA)
-# ==========================================
 def crear_cola_exportacion():
     return {"elementos": []}
 
 def encolar_para_exportar(cola, presupuesto):
     cola["elementos"].append(presupuesto)
-    print("[✓] Presupuesto N° {} enviado a la COLA de exportación.".format(presupuesto["id"]))
 
 def procesar_cola_exportacion(cola, historial, archivos):
     if not cola["elementos"]:
-        print("[!] No hay cotizaciones en la cola de exportación.")
         return False
     p = cola["elementos"].pop(0)
     agregar_historial(historial, p)
     archivos.guardar_presupuesto(p)
     archivos.exportar_presupuesto_csv(p)
+    archivos.exportar_presupuesto_pdf(p)  # <--- Genera el PDF automáticamente
     return True

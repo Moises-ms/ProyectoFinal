@@ -1,6 +1,8 @@
 # archivos.py
-# Persistencia con archivos de texto plano. SIN json, SIN csv, SIN POO.
-import os  # solo para crear la carpeta datos/
+# Persistencia en disco y generación de PDF oficial. SIN JSON, SIN CSV, SIN POO.
+import os
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 CARPETA = "datos"
 
@@ -8,9 +10,6 @@ def _crear_carpeta():
     if not os.path.exists(CARPETA):
         os.makedirs(CARPETA)
 
-# ==========================================
-# CLIENTES
-# ==========================================
 def guardar_clientes(lista_clientes):
     _crear_carpeta()
     ruta = CARPETA + "/clientes.txt"
@@ -23,7 +22,6 @@ def guardar_clientes(lista_clientes):
         )
         archivo.write(linea)
     archivo.close()
-    print("[✓] Clientes guardados en datos/clientes.txt")
 
 def cargar_clientes():
     _crear_carpeta()
@@ -50,9 +48,6 @@ def cargar_clientes():
     archivo.close()
     return lista
 
-# ==========================================
-# PRESUPUESTOS (guardado y carga)
-# ==========================================
 def guardar_presupuesto(presupuesto):
     _crear_carpeta()
     ruta = CARPETA + "/presupuesto_{}.txt".format(presupuesto["id"])
@@ -81,10 +76,8 @@ def guardar_presupuesto(presupuesto):
         actual = actual["siguiente"]
     archivo.write("===FIN===\n")
     archivo.close()
-    print("[✓] Presupuesto N° {} guardado en disco.".format(presupuesto["id"]))
 
 def cargar_presupuesto(ruta, modulo_presupuestos):
-    """Reconstruye un presupuesto llamando al módulo presupuestos."""
     archivo = open(ruta, "r", encoding="utf-8")
     lineas = archivo.readlines()
     archivo.close()
@@ -100,12 +93,12 @@ def cargar_presupuesto(ruta, modulo_presupuestos):
 
     cliente = {"nombre": datos.get("cliente", "?"), "rubro": datos.get("rubro", "General")}
     p = modulo_presupuestos.crear_presupuesto(int(datos["id"]), cliente)
-    p["subtotal"] = float(datos["subtotal"])
-    p["descuento"] = float(datos["descuento"])
-    p["impuesto"] = float(datos["impuesto"])
-    p["total"] = float(datos["total"])
+    p["subtotal"] = float(datos.get("subtotal", 0.0))
+    p["descuento"] = float(datos.get("descuento", 0.0))
+    p["impuesto"] = float(datos.get("impuesto", 0.0))
+    p["total"] = float(datos.get("total", 0.0))
 
-    i += 1  # saltar ---ITEMS---
+    i += 1
     while i < len(lineas) and not lineas[i].startswith("==="):
         linea = lineas[i].strip()
         if linea:
@@ -130,7 +123,7 @@ def cargar_todos_presupuestos(modulo_presupuestos):
     for nombre in os.listdir(CARPETA):
         if nombre.startswith("presupuesto_") and nombre.endswith(".txt"):
             lista.append(cargar_presupuesto(CARPETA + "/" + nombre, modulo_presupuestos))
-    # Ordenar por id
+    
     lista_ordenada = []
     for p in lista:
         insertado = False
@@ -143,9 +136,6 @@ def cargar_todos_presupuestos(modulo_presupuestos):
             lista_ordenada.append(p)
     return lista_ordenada
 
-# ==========================================
-# EXPORTAR A CSV
-# ==========================================
 def exportar_presupuesto_csv(presupuesto):
     _crear_carpeta()
     ruta = CARPETA + "/exportacion_{}.csv".format(presupuesto["id"])
@@ -164,12 +154,69 @@ def exportar_presupuesto_csv(presupuesto):
     archivo.write("IMPUESTO,,,,{}\n".format(presupuesto["impuesto"]))
     archivo.write("TOTAL,,,,{}\n".format(presupuesto["total"]))
     archivo.close()
-    print("[✓] Exportado a {}".format(ruta))
     return ruta
 
-# ==========================================
-# LEER CATÁLOGO CSV
-# ==========================================
+def exportar_presupuesto_pdf(presupuesto):
+    """Genera la cotización en PDF usando reportlab canvas."""
+    _crear_carpeta()
+    ruta_pdf = CARPETA + "/cotizacion_{}.pdf".format(presupuesto["id"])
+    c = canvas.Canvas(ruta_pdf, pagesize=letter)
+    ancho, alto = letter
+
+    c.setFont("Helvetica-Bold", 18)
+    c.drawString(50, alto - 50, "COTIZACIÓN N° {}".format(presupuesto["id"]))
+
+    c.setFont("Helvetica", 11)
+    cliente = presupuesto["cliente"]
+    nombre_cli = cliente["nombre"] if isinstance(cliente, dict) else cliente
+    rubro_cli = cliente.get("rubro", "General") if isinstance(cliente, dict) else "General"
+
+    c.drawString(50, alto - 75, "Cliente: {}".format(nombre_cli))
+    c.drawString(50, alto - 90, "Rubro / Especialidad: {}".format(rubro_cli))
+    c.line(50, alto - 100, ancho - 50, alto - 100)
+
+    y = alto - 125
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(50, y, "Tipo")
+    c.drawString(140, y, "Concepto / Descripción")
+    c.drawString(340, y, "Cant.")
+    c.drawString(400, y, "P. Unit ($)")
+    c.drawString(480, y, "Subtotal ($)")
+
+    c.line(50, y - 5, ancho - 50, y - 5)
+    y -= 25
+
+    c.setFont("Helvetica", 10)
+    actual = presupuesto["cabeza"]
+    while actual is not None:
+        c.drawString(50, y, str(actual["tipo"]))
+        c.drawString(140, y, str(actual["concepto"])[:30])
+        c.drawString(340, y, str(actual["cantidad"]))
+        c.drawString(400, y, "${:.2f}".format(actual["precio_unitario"]))
+        c.drawString(480, y, "${:.2f}".format(actual["subtotal_item"]))
+        y -= 20
+        actual = actual["siguiente"]
+        if y < 100:
+            c.showPage()
+            y = alto - 50
+
+    c.line(50, y, ancho - 50, y)
+    y -= 25
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(360, y, "Subtotal: ${:.2f}".format(presupuesto["subtotal"]))
+    y -= 18
+    if presupuesto.get("descuento", 0) > 0:
+        c.drawString(360, y, "Descuento: -${:.2f}".format(presupuesto["descuento"]))
+        y -= 18
+    if presupuesto.get("impuesto", 0) > 0:
+        c.drawString(360, y, "Impuestos: +${:.2f}".format(presupuesto["impuesto"]))
+        y -= 18
+    c.setFont("Helvetica-Bold", 13)
+    c.drawString(360, y, "TOTAL FINAL: ${:.2f}".format(presupuesto["total"]))
+
+    c.save()
+    return ruta_pdf
+
 def leer_catalogo_csv():
     ruta = CARPETA + "/catalogo.csv"
     items = []
@@ -179,9 +226,7 @@ def leer_catalogo_csv():
     primera = True
     for linea in archivo:
         linea = linea.strip()
-        if not linea:
-            continue
-        if primera:
+        if not linea or primera:
             primera = False
             continue
         partes = linea.split(",")

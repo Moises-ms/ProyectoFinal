@@ -2,7 +2,6 @@
 # Administra la lista de clientes mediante diccionarios de Python.
 
 def registrar_cliente(lista_clientes, id_cliente, nombre, telefono, direccion, correo, rubro):
-    """Crea un cliente como diccionario y lo añade a la lista general."""
     cliente = {
         "id": id_cliente,
         "nombre": nombre,
@@ -16,7 +15,6 @@ def registrar_cliente(lista_clientes, id_cliente, nombre, telefono, direccion, c
     return cliente
 
 def buscar_cliente(lista_clientes, criterio):
-    """Busca un cliente por ID o por nombre."""
     resultados = []
     criterio_str = str(criterio).lower().strip()
     for c in lista_clientes:
@@ -25,31 +23,22 @@ def buscar_cliente(lista_clientes, criterio):
     return resultados
 
 def modificar_cliente(lista_clientes, id_cliente, campo, nuevo_valor):
-    """Modifica un campo específico del cliente."""
     for c in lista_clientes:
         if c["id"] == id_cliente:
             if campo in c:
                 c[campo] = nuevo_valor
-                print(f"[✓] Campo '{campo}' actualizado a '{nuevo_valor}' para el cliente ID {id_cliente}.")
                 return True
-            else:
-                print(f"[X] El campo '{campo}' no existe en la ficha de cliente.")
-                return False
-    print(f"[X] Cliente ID {id_cliente} no encontrado.")
+            return False
     return False
 
 def eliminar_cliente(lista_clientes, id_cliente):
-    """Elimina un cliente por su ID."""
     for c in lista_clientes:
         if c["id"] == id_cliente:
             lista_clientes.remove(c)
-            print(f"[✓] Cliente ID {id_cliente} eliminado del sistema.")
             return True
-    print(f"[X] Cliente ID {id_cliente} no encontrado.")
     return False
 
 def mostrar_clientes(lista_clientes):
-    """Muestra la lista de clientes registrados o un mensaje si está vacía."""
     if not lista_clientes:
         print("\n[!] No se han registrado clientes aún en el sistema.")
         return False
